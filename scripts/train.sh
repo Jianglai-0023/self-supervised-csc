@@ -1,0 +1,14 @@
+  CUDA_VISIBLE_DEVICES=0 python run.py \
+  --do_train \
+  --do_eval \
+  --train_on ecspell/train_law.txt \
+  --eval_on ecspell/test_law.txt \
+  --fp16 \
+  --output_dir relm_mnlg_ecspell_law \
+  --max_train_steps 5000 \
+  --save_steps 500 \
+  --noise_probability 0.3 \
+  --train_batch_size 128 \
+  --model_type relm \
+  --mft \
+  --mnlg 
