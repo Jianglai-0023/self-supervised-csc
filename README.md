@@ -1,6 +1,6 @@
 # Chinese Spelling Corrector Is Just Language Learner
 
-This is the official repo for the ACL 2024 Findings paper *Chinese Spelling Corrector is just language learner*.
+This is the official repo for the ACL 2024 Findings paper *Chinese Spelling Corrector Is Just Language Learner*.
 
 ![img](https://github.com/Jianglai-0023/self-supervised-csc/blob/main/figs/fig1.png)
 
