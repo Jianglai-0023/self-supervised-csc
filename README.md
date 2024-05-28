@@ -6,10 +6,9 @@ This is the official repo for the ACL 2024 Findings paper *Chinese Spelling Corr
 
 ## Quick Start
 
-Train (on ECSpell Law)
+**Train (on ECSpell Law)**
 `./scripts/train.sh`
 
-Decode with $D^2C$
+**Decode with $D^2C$** 
 `./scripts/decode.sh`
-
 
