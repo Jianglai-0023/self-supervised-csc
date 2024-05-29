@@ -50,7 +50,6 @@ def _create_examples(lines):
 def customize(top_k_scores, log_topk_scores, topk_indexes,processor,tokenizer,k_size,length,weight = 4):
     max_logit = 1
     min_logit = 2e-5
-    # todo not sure about logit
     res_sent = []
     for j in range(length):
         res_token = []
@@ -116,7 +115,6 @@ def main():
 
     args = parser.parse_args() 
     startt = datetime.datetime.now()
-    # args = args_item()
     vocab_filename = args.vocab
     processor = VocabProcessor(vocab_filename)
     if not os.path.exists(args.output_dir):
@@ -131,7 +129,6 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(args.load_model_path,
                                           cache_dir="../cache")
     model.eval()
-    # accelerator = Accelerator(cpu=False, mixed_precision="fp16")
     data_path = os.path.join(args.data_path,args.eval_on)
     data = _create_examples(_read(data_path))
     all_inputs,all_trgs,all_prd = [],[],[]
@@ -143,9 +140,7 @@ def main():
 
         src_ids = src_ids_[:]
         src_ids = [tokenizer.cls_token_id] + src_ids + [tokenizer.sep_token_id] + [tokenizer.mask_token_id for _ in src_ids] + [tokenizer.sep_token_id]
-        # attention_mask = [1] * len(src_ids)
         src_ids = torch.LongTensor([src_ids]).to("cuda")
-        # attention_mask = torch.LongTensor([attention_mask]).to("cuda") 
         outputs = model(src_ids)
         logits = outputs["logits"]
         prd_ids = outputs["predict_ids"]
@@ -161,8 +156,6 @@ def main():
                     if c == ori:
                         flag = True
                 else: break
-                # if rank == 10:
-                #     break
 
         prd_probs, prd_ids = torch.max(probs, -1)
         _p = [pt for pt, st in zip(prd_ids[0], src_ids[0]) if st == tokenizer.mask_token_id]
@@ -218,12 +211,10 @@ def main():
         res_sents = []
 
         def global_search(sent, t):
-            # print(t)
             if len(t) == 0:
                 res_sents.append(list(sent.strip().split(" ")))
             else:
                 for j in t[0]:
-                    # print(t[0])
                     global_search(f"{sent} {j[0]},{j[1]}", t[1:])
 
         def convert_type(mid_results: List):
@@ -254,10 +245,7 @@ def main():
                             new_result = result[:-1] + [[score, token]] + [total_score + score]
                             results.append(new_result)
                     mid_results = results.copy()
-                    # convert
                     output = convert_type(mid_results)
-                    # print(output)
-                    # reward
                     res_sents_ids = [[int(y.split(",")[1]) for y in x] for x in output]
                     res_sents_scores = [[float(y.split(",")[0]) for y in x] for x in output]
                     res_sents = [[tokenizer.convert_ids_to_tokens(y) for y in x] for x in res_sents_ids]
@@ -265,10 +253,8 @@ def main():
                     vocab_mean = np.mean(vocab_len)
                     vocab_len = [(x - vocab_mean) for x in vocab_len]
                     scores = [weight * v_l + sum(score) for v_l, score in zip(vocab_len, res_sents_scores)]
-                    # print(scores)
                     for idx, (_, s) in enumerate(zip(mid_results, scores)):
                         mid_results[idx][-1] = s
-                    # sort results by scores
                     mid_results = sorted(mid_results, key=lambda x: -x[-1])[:beam_size]
 
             res_sents = convert_type(mid_results)
@@ -330,14 +316,9 @@ def main():
             _pp = [pt for pt, st in zip(prd_probs[0], src_ids[0]) if st == tokenizer.mask_token_id]
             
             inp = decode(src_ids[0])
-            # print("INPUT:",inp)
-            # exit()
             all_inputs += [inp]
             _t = [tt for tt,st, in zip(trg_ids[0],src_ids[0]) if st == tokenizer.mask_token_id]
-            # print((stdf(" ".join(input.src))).split())
             all_trgs += [decode(_t)]
-            # print("TRG:",decode(_t))
-            # print(decode(_p))
             input_ids = _p
             xx = _pp
             if args.calc_prd:
@@ -347,7 +328,6 @@ def main():
                         max_prob = 0
                         letter_ids = -1
                         idx = 0
-                        # min_prob = min(xx[j],prd_probs[0][j+1])
                         for j in range(len(input_ids)):        
                             if round(xx[j].item(), 4)==1 and round(prd_probs[0][j+1].item(),4)==1:
                                 continue
@@ -359,35 +339,15 @@ def main():
                                 letter_ids = _p[j]
                                 idx = j
                                 max_prob = _pp[j]
-                        # print(max_prob)
                         if letter_ids != -1 and max_prob > args.change_logits:
                             input_ids[idx] = letter_ids
                             input_ids,xx = calc_prd(input_ids,False)
                             corr = corr + 1
                             if corr == 2:
                                 break
-                        # elif letter_ids != -1 and max_prob > 0.3:
-                        #     tx[j] = _p[j]
-                        #     p,pp = calc_prd(tx,False)
-                        #     if pp[j] > min_prob:
-                        #         input_ids[idx] = letter_ids
-                        #         input_ids,xx = calc_prd(input_ids,False)
-                        #         src_ids = [tokenizer.cls_token_id] + src_ids + [tokenizer.sep_token_id] + [tokenizer.mask_token_id for _ in src_ids] + [tokenizer.sep_token_id]
-                        #         src_ids = torch.LongTensor([src_ids]).to("cuda")
-                        #         outputs = model(src_ids)
-                        #         logits = outputs["logits"]
-                        #         probs = model.softmax(logits)
-                        #         prd_probs, prd_ids = torch.max(probs, -1)
                         else: 
-                            # print(_)
                             break
                 elif args.accelerate: 
-                    # sort_idx = sorted(range(len(xx)),key=lambda k: xx[k], reverse=False)
-                    # print(xx[sort_idx[0]])
-                    # print(xx[sort_idx[1]])
-                    # print(sort_idx)
-                    # exit()
-                    # for _ in range(len(input_ids)):
                         max_prob = 0
                         letter_ids = -1
                         idx = 0
@@ -396,8 +356,6 @@ def main():
                             if idx_ == len(sort_idx): break
                             r = sort_idx[idx_]
                             
-                            # for j in range(len(input_ids)):
-                            # min_prob = min(xx[r],prd_probs[0][r+1])
                             tx = input_ids[:]
                             ori = tx[r]
                             tx[r] = tokenizer.mask_token_id
@@ -411,21 +369,12 @@ def main():
                                 input_ids[idx] = letter_ids
                                 input_ids,xx = calc_prd(input_ids,False)
                             else: break
-                        # else: 
-                        #     break
-                            # elif letter_ids != -1:
-                            #     tx[r] = _p[r]
-                            #     p,pp = calc_prd(tx,False)
-                            #     if pp[r] > min_prob:
-                            #         input_ids[idx] = letter_ids
-                            #         input_ids,xx = calc_prd(input_ids,False) 
 
                 else:
                     for _ in range(len(input_ids)):
                         max_prob = 0
                         letter_ids = -1
                         idx = 0
-                        # for j in range(len(input_ids)):
                         min_prob = min(xx[_],prd_probs[0][_+1])
                         if round(xx[_].item(), 4)==1 and round(prd_probs[0][_+1].item(),4)==1:
                             continue
@@ -456,7 +405,6 @@ def main():
             
                 prd = (stdf(" ".join(decode(input_ids)))).split()
                 prd = [p if p != "[UNK]" else s for p,s in zip(prd,inp)] 
-                # print("PRD:",prd)
                 all_prd += [prd]
             
 
@@ -478,14 +426,10 @@ def main():
                         writer.write("S: " + " ".join(ss) + "\n")
                         writer.write("T: " + " ".join(tt) + "\n")
                         writer.write("P: " + " ".join(pp) + "\n")
-                # exit()
             if i % 100 == 0:
                 output_result_file = os.path.join(args.output_dir,"sents.result")
                 p,r,f1,fpr,tp,fp,fn = Metrics.compute(all_inputs,all_trgs,all_prd)
                 print(f1*100)
-                # print(tp)
-                # print(fp)
-                # print(fn)
                 with open(output_result_file, "a") as writer: 
                     writer.write(str(i) + " steps:" + "\n")
                     writer.write("F1:" + str(f1 * 100) + "\n")
@@ -518,7 +462,6 @@ def main():
     output_fp_file = os.path.join(args.output_dir, "sents.fp")
     with open(output_fp_file, "w") as writer:
         for line in fp:
-            # print(line)
             writer.write(line + "\n")
     output_fn_file = os.path.join(args.output_dir, "sents.fn")
     with open(output_fn_file, "w") as writer:

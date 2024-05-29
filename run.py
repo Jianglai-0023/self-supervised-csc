@@ -153,8 +153,6 @@ class ConfusDataset(IterableDataset):
             return tokens, list(src)
         chosen = random.choice(all_indices)
         j = chosen
-        # chosen = random.sample(all_indices,len(all_indices)//2)
-        # for j in chosen:
         rn = random.random()
         if rn < 0.4:
             if tokens[j] in self.pinyin_sam_confus:
@@ -610,7 +608,6 @@ def main():
 
 
                 if args.adv:
-                    # inputs_embeds = model.bert.embeddings.word_embeddings(src_ids)
                     inputs_embeds = model.bert.embeddings.word_embeddings(src_ids).detach()
                     adv_steps = 2
                     delta = torch.zeros_like(inputs_embeds, requires_grad=True)
@@ -631,7 +628,6 @@ def main():
 
                         delta = _inner_update(delta)
                         delta.requires_grad_()
-                        # inputs_embeds = model.bert.embeddings.word_embeddings(src_ids)
                         inputs_embeds = model.bert.embeddings.word_embeddings(src_ids).detach()
 
                 else:
@@ -689,7 +685,6 @@ def main():
                                 all_labels += [decode(t)]
                                 all_predictions += [decode(p)]
 
-                    # loss = train_loss / global_step
                     loss = train_loss / (global_step+1) 
                     p, r, f1, fpr, tp, fp, fn = Metrics.compute(all_inputs, all_labels, all_predictions)
     
@@ -757,7 +752,6 @@ def main():
         model = accelerator.prepare(model)
 
         avg = 0
-        # for cat in ["gam", "car", "nov", "enc", "new", "cot", "mec", "sig"]:
         eval_examples = processor.get_test_examples(args.data_dir, args.eval_on)
         eval_features = processor.convert_examples_to_features(eval_examples, args.max_seq_length, tokenizer, False)
 
@@ -816,11 +810,6 @@ def main():
         logger.info("R = {}".format(r * 100)) 
         logger.info("FPR = {}".format(fpr * 100))
         logger.info(args.output_dir)
-        # print(all_predictions)
-        # logger.info("{}: F1 = {}".format(cat.upper(), f1 * 100))
-
-        # avg /= 8
-        # logger.info("AVG: F1 = {}".format(avg))
 
 if __name__ == "__main__":
     main()
